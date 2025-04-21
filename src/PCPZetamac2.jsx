@@ -8,6 +8,7 @@ export default function PCPZetamac2() {
     combo: false,
     bwps: false,
     duration: 120,
+    randPos: true,
     startGame: false,
     questions: []
   });
@@ -59,7 +60,12 @@ export default function PCPZetamac2() {
   };
 
   if (state.startGame) {
-    return <PCPZetamac2Question duration={state.duration} questions={state.questions} changeSettings={changeSettings} />
+    return <PCPZetamac2Question
+              duration={state.duration}
+              questions={state.questions}
+              changeSettings={changeSettings}
+              randomizePositions={state.randPos}
+            />
   }
 
   return (
@@ -109,6 +115,17 @@ export default function PCPZetamac2() {
               <option value='600'>600 seconds</option>
             </select>
           </p>
+
+          <dl>
+
+            <dt>
+              <label>Randomize Positions &nbsp;</label>
+              <input name='randPos' type='checkbox' checked={state.randPos} onChange={handleInputChange} />
+            </dt>
+            <dd>Scatter values across screen randomly every question</dd>
+
+          </dl>
+
           <input type='submit' value='Start'>
           </input>
 
@@ -125,7 +142,8 @@ function round(num){
   return +(num.toFixed(2))
 }
 
-function PCPZetamac2Question({ duration, questions, changeSettings }) {
+function PCPZetamac2Question({ duration, questions, changeSettings, randomizePositions }) {
+
   const [state, setState] = useState({
     questionData: [],
     questionType: 0,
@@ -133,8 +151,30 @@ function PCPZetamac2Question({ duration, questions, changeSettings }) {
     score: 0,
     time: duration,
   });
+  const [gameKey, setGameKey] = useState(0);
+
+
+
+
+  const defaultPositions = (length) => {
+    const positions = []
+
+    for (let i = 0; i < length; i++) {
+      positions.push({
+        top: (i+0.5) * length/60 * 100,
+        left: 50,
+      })
+    }
+
+    return positions;
+  }
 
   const generatePositions = (length) => {
+
+    if (!randomizePositions) {
+      return defaultPositions(length);
+    }
+
     const positions = [];
 
     const generateNonOverlappingPosition = () => {
@@ -232,7 +272,7 @@ function PCPZetamac2Question({ duration, questions, changeSettings }) {
     questionList[questionType]();
   }
 
-  useEffect(() => {
+  function startGame() {
     newQuestion();
 
     const timerID = setInterval(() => {
@@ -250,7 +290,12 @@ function PCPZetamac2Question({ duration, questions, changeSettings }) {
     }, 1000);
 
     return () => clearInterval(timerID);
-  }, []);
+  }
+
+  useEffect(() => {
+    const cleanup = startGame();
+    return cleanup;
+  }, [gameKey]);
 
 
 
@@ -263,6 +308,30 @@ function PCPZetamac2Question({ duration, questions, changeSettings }) {
       event.target.value = '';
       newQuestion();
     }
+  }
+
+  const restart = () => {
+    setState((prev) => ({
+      ...prev,
+      time: duration,
+      score: 0,
+    }));
+    setGameKey((prev) => prev+1);
+  }
+
+
+  if (state.time <= 0) {
+    return (
+      <div className="d-flex flex-column justify-content-center align-items-center vh-100">
+
+        <p style={{fontSize: 40}}>
+          Score: {state.score}
+        </p>
+        <button onClick={restart}>Restart</button>
+        <button onClick={changeSettings}>Change settings</button>
+
+      </div>
+    )
   }
 
 
