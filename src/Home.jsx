@@ -22,13 +22,13 @@ export default function Home() {
 
           <li> <Link to='/pcp_zetamac_2'> PCP Zetamac 2.0 </Link> </li>
 
-          <li> <a target="_blank" rel="noopener noreferrer" href='#'> Arbitrage Zetamac </a> </li>
+          <li> <Link to='#'> Arbitrage Zetamac </Link> </li>
 
-          <li> <a target="_blank" rel="noopener noreferrer" href='#'> Kenstonks </a> </li>
+          <li> <a target="_blank" rel="noopener noreferrer" href='https://kenstonk.herokuapp.com/'> Kenstonks </a> </li>
 
-          <li> <a target="_blank" rel="noopener noreferrer" href='#'> Options Board Arbitrage Sim </a> </li>
+          <li> <Link to='#'> Options Board Arbitrage Sim </Link> </li>
 
-          <li> <a target="_blank" rel="noopener noreferrer" href='#'> Mock Trading </a> </li>
+          <li> <Link to='#'> Mock Trading </Link> </li>
 
         </ol>
 
