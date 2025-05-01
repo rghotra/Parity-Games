@@ -22,7 +22,7 @@ export default function Home() {
 
           <li> <Link to='/pcp_zetamac_2'> PCP Zetamac 2.0 </Link> </li>
 
-          <li> <Link to='#'> Arbitrage Zetamac </Link> </li>
+          <li> <Link to='/arbitrage_zetamac'> Arbitrage Zetamac </Link> </li>
 
           <li> <a target="_blank" rel="noopener noreferrer" href='https://kenstonk.herokuapp.com/'> Kenstonks </a> </li>
 

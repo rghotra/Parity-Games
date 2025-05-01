@@ -148,6 +148,7 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
     questionData: [],
     questionType: 0,
     unknownValue: 0,
+    unknownLabel: '',
     score: 0,
     time: duration,
   });
@@ -231,6 +232,7 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
       ...prev,
       questionType: 0,
       unknownValue: callValue,
+      unknownLabel: 'C',
       questionData,
     }));
   };
@@ -260,6 +262,7 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
       ...prev,
       questionType: 1,
       unknownValue: putValue,
+      unknownLabel: 'P',
       questionData,
     }));
   };
@@ -353,6 +356,7 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
               className="form-control text-center"
               style={{ width: 150, fontSize: 24 }}
               onChange={validate}
+              placeholder={state.unknownLabel}
             />
           </div>
         </div>

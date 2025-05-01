@@ -5,6 +5,7 @@ import viteLogo from '/vite.svg'
 import './App.css'
 import Home from './Home'
 import PCPZetamac2 from './PCPZetamac2'
+import ArbitrageZetamac from './ArbitrageZetamac'
 
 function App() {
 
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route path='/' element={<Home />} />
         <Route path='/pcp_zetamac_2' element={<PCPZetamac2 />} />
+        <Route path='/arbitrage_zetamac' element={<ArbitrageZetamac />} />
       </Routes>
     </BrowserRouter>
   );
