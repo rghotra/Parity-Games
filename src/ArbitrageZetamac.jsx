@@ -78,13 +78,16 @@ function round(num) {
   return +num.toFixed(2);
 }
 
+// ... other imports
 function PCPMispricingGame({ duration, questions, changeSettings, randomizePositions }) {
   const [state, setState] = useState({
     questionData: [],
     correctAnswer: '',
-    mispricingDirection: '', // 'under' or 'over'
+    mispricingDirection: '',
     score: 0,
     time: duration,
+    history: [],
+    questionStartTime: null,
   });
 
   const [gameKey, setGameKey] = useState(0);
@@ -152,8 +155,8 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
       callValue = round(stockValue - strikeValue + putValue + rcValue);
     }
 
-    const noiseFactor = 1 + gaussianNoise(0, 0.02);
-    const noisyPutValue = round(putValue * noiseFactor);
+    const noise = gaussianNoise(0, 0.05);
+    const noisyPutValue = round(putValue + noise);
     const parityCall = round(stockValue - strikeValue + noisyPutValue + rcValue);
     const callRounded = round(callValue);
     const parityRounded = round(parityCall);
@@ -166,12 +169,9 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
       correctAnswer = '-';
     } else {
       const isCallOverpriced = callRounded > parityRounded;
-
-      if (isCallOverpriced) {
-        correctAnswer = isAskingForUnderpriced ? 'P' : 'C';
-      } else {
-        correctAnswer = isAskingForUnderpriced ? 'C' : 'P';
-      }
+      correctAnswer = isAskingForUnderpriced
+        ? (isCallOverpriced ? 'P' : 'C')
+        : (isCallOverpriced ? 'C' : 'P');
     }
 
     const labels = [
@@ -190,6 +190,7 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
       questionData,
       correctAnswer,
       mispricingDirection,
+      questionStartTime: Date.now(),
     }));
   };
 
@@ -217,18 +218,49 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
     return cleanup;
   }, [gameKey]);
 
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      switch (event.key) {
+        case 'ArrowLeft':
+          handleAnswer('C');
+          break;
+        case 'ArrowRight':
+          handleAnswer('P');
+          break;
+        case 'ArrowDown':
+          handleAnswer('-');
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [state.correctAnswer, state.questionStartTime]);
+
   const handleAnswer = (choice) => {
-    if (choice === state.correctAnswer) {
-      setState((prev) => ({
-        ...prev,
-        score: prev.score + 1,
-      }));
-    } else {
-      setState((prev) => ({
-        ...prev,
-        score: prev.score - 1,
-      }));
-    }
+    const timeTaken = (Date.now() - state.questionStartTime) / 1000;
+    const isCorrect = choice === state.correctAnswer;
+
+    const questionSummary = {
+      questionData: state.questionData,
+      userAnswer: choice,
+      correctAnswer: state.correctAnswer,
+      mispricingDirection: state.mispricingDirection,
+      isCorrect,
+      timeTaken: +timeTaken.toFixed(2),
+      predictionType: state.mispricingDirection,
+    };
+
+    setState((prev) => ({
+      ...prev,
+      score: prev.score + (isCorrect ? 1 : -1),
+      history: [...prev.history, questionSummary],
+    }));
+
     newQuestion();
   };
 
@@ -237,16 +269,51 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
       ...prev,
       time: duration,
       score: 0,
+      history: [],
+      questionStartTime: null,
     }));
     setGameKey((prev) => prev + 1);
   };
 
   if (state.time <= 0) {
     return (
-      <div className="d-flex flex-column justify-content-center align-items-center vh-100">
-        <p style={{ fontSize: 40 }}>Score: {state.score}</p>
-        <button onClick={restart}>Restart</button>
-        <button onClick={changeSettings}>Change settings</button>
+      <div className="container py-4">
+        <h2 className="text-center">Game Over</h2>
+        <p className="text-center" style={{ fontSize: 24 }}>Final Score: {state.score}</p>
+        <div className="text-center my-3">
+          <button className="btn btn-primary mx-2" onClick={restart}>Restart</button>
+          <button className="btn btn-secondary mx-2" onClick={changeSettings}>Change Settings</button>
+        </div>
+        <hr />
+        <h4>Question Log</h4>
+        <table className="table table-bordered mt-3">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Correct</th>
+              <th>User</th>
+              <th>✓ / ✗</th>
+              <th>Time (s)</th>
+              <th>Prediction</th>
+              <th>Inputs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {state.history.map((entry, index) => (
+              <tr key={index} className={entry.isCorrect ? 'table-success' : 'table-danger'}>
+                <td>{index + 1}</td>
+                <td>{entry.correctAnswer}</td>
+                <td>{entry.userAnswer}</td>
+                <td>{entry.isCorrect ? '✓' : '✗'}</td>
+                <td>{entry.timeTaken}</td>
+                <td>{entry.predictionType}</td>
+                <td>
+                  {entry.questionData.map(({ label, value }) => `${label}: ${value}`).join(', ')}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     );
   }
@@ -261,7 +328,6 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
       </div>
 
       <div className="row w-100 h-100 position-relative" style={{ marginTop: 50, fontSize: 24 }}>
-        {/* Question */}
         <div className="position-absolute top-50 start-50 translate-middle text-center" style={{ zIndex: 10 }}>
           <p style={{ fontSize: 20 }}>
             {`Which is ${state.mispricingDirection}priced?`}
@@ -279,7 +345,6 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
           </div>
         </div>
 
-        {/* Labels */}
         {state.questionData.map((item, idx) => (
           <div
             key={idx}
@@ -292,7 +357,7 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
               pointerEvents: 'auto',
               width: 'auto',
               maxWidth: 'max-content',
-              zIndex: 1
+              zIndex: 1,
             }}
           >
             {item.label}: {item.value}
