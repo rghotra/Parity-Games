@@ -155,18 +155,24 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
     const noiseFactor = 1 + gaussianNoise();
     const noisyPutValue = round(putValue * noiseFactor);
     const parityCall = round(stockValue - strikeValue + noisyPutValue + rcValue);
-    const diff = callValue - parityCall;
-
-    const isCallOverpriced = diff > 0;
-
-    const isAskingForUnderpriced = Math.random() < 0.5;
-    const mispricingDirection = isAskingForUnderpriced ? 'under' : 'over';
+    const callRounded = round(callValue);
+    const parityRounded = round(parityCall);
 
     let correctAnswer;
-    if (isCallOverpriced) {
-      correctAnswer = isAskingForUnderpriced ? 'P' : 'C';
+    let mispricingDirection = '';
+
+    if (callRounded === parityRounded) {
+      correctAnswer = '-';
     } else {
-      correctAnswer = isAskingForUnderpriced ? 'C' : 'P';
+      const isCallOverpriced = callRounded > parityRounded;
+      const isAskingForUnderpriced = Math.random() < 0.5;
+      mispricingDirection = isAskingForUnderpriced ? 'under' : 'over';
+
+      if (isCallOverpriced) {
+        correctAnswer = isAskingForUnderpriced ? 'P' : 'C';
+      } else {
+        correctAnswer = isAskingForUnderpriced ? 'C' : 'P';
+      }
     }
 
     const labels = [
@@ -259,21 +265,16 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
         {/* Question */}
         <div className="position-absolute top-50 start-50 translate-middle text-center" style={{ zIndex: 10 }}>
           <p style={{ fontSize: 20 }}>
-            Which is <strong>{state.mispricingDirection}priced</strong>?
+            {state.correctAnswer === '-' ? "Are both correctly priced?" : `Which is ${state.mispricingDirection}priced?`}
           </p>
           <div className="d-flex gap-3 justify-content-center mt-2">
-            <button
-              className="btn btn-primary px-4"
-              style={{ fontSize: 20 }}
-              onClick={() => handleAnswer('C')}
-            >
+            <button className="btn btn-primary px-4" style={{ fontSize: 20 }} onClick={() => handleAnswer('C')}>
               C
             </button>
-            <button
-              className="btn btn-success px-4"
-              style={{ fontSize: 20 }}
-              onClick={() => handleAnswer('P')}
-            >
+            <button className="btn btn-danger px-4" style={{ fontSize: 20 }} onClick={() => handleAnswer('-')}>
+              -
+            </button>
+            <button className="btn btn-success px-4" style={{ fontSize: 20 }} onClick={() => handleAnswer('P')}>
               P
             </button>
           </div>
