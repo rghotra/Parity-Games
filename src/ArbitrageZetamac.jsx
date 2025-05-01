@@ -152,7 +152,7 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
       callValue = round(stockValue - strikeValue + putValue + rcValue);
     }
 
-    const noiseFactor = 1 + gaussianNoise();
+    const noiseFactor = 1 + gaussianNoise(0, 0.02);
     const noisyPutValue = round(putValue * noiseFactor);
     const parityCall = round(stockValue - strikeValue + noisyPutValue + rcValue);
     const callRounded = round(callValue);
@@ -265,7 +265,7 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
         {/* Question */}
         <div className="position-absolute top-50 start-50 translate-middle text-center" style={{ zIndex: 10 }}>
           <p style={{ fontSize: 20 }}>
-            {state.correctAnswer === '-' ? "Are both correctly priced?" : `Which is ${state.mispricingDirection}priced?`}
+            {`Which is ${state.mispricingDirection}priced?`}
           </p>
           <div className="d-flex gap-3 justify-content-center mt-2">
             <button className="btn btn-primary px-4" style={{ fontSize: 20 }} onClick={() => handleAnswer('C')}>
