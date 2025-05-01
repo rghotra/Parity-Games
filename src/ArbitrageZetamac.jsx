@@ -159,14 +159,13 @@ function PCPMispricingGame({ duration, questions, changeSettings, randomizePosit
     const parityRounded = round(parityCall);
 
     let correctAnswer;
-    let mispricingDirection = '';
+    const isAskingForUnderpriced = Math.random() < 0.5;
+    const mispricingDirection = isAskingForUnderpriced ? 'under' : 'over';
 
     if (callRounded === parityRounded) {
       correctAnswer = '-';
     } else {
       const isCallOverpriced = callRounded > parityRounded;
-      const isAskingForUnderpriced = Math.random() < 0.5;
-      mispricingDirection = isAskingForUnderpriced ? 'under' : 'over';
 
       if (isCallOverpriced) {
         correctAnswer = isAskingForUnderpriced ? 'P' : 'C';
