@@ -4,11 +4,11 @@ export default function PCPZetamac2() {
 
   const [state, setState] = useState({
     putCall: true,
-    straddle: false,
-    combo: false,
-    bwps: false,
+    straddle: true,
+    combo: true,
+    bwps: true,
     duration: 120,
-    randPos: true,
+    randPos: false,
     startGame: false,
     questions: []
   });
@@ -142,6 +142,20 @@ function round(num){
   return +(num.toFixed(2))
 }
 
+const questionNames = [
+    'Put to Call',
+    'Call to Put',
+    'Combo to Stock',
+    'Straddle To Call',
+    'Straddle To Put',
+    'Call To Straddle',
+    'Put To Straddle',
+    'B/W To Call',
+    'B/W To Put',
+    'P+S To Call',
+    'P+S To Put',
+  ];
+
 function PCPZetamac2Question({ duration, questions, changeSettings, randomizePositions }) {
 
   const [state, setState] = useState({
@@ -151,6 +165,8 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
     unknownLabel: '',
     score: 0,
     time: duration,
+    history: [],
+    questionStartTime: null,
   });
   const [gameKey, setGameKey] = useState(0);
 
@@ -234,6 +250,7 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
       unknownValue: callValue,
       unknownLabel: 'C',
       questionData,
+      questionStartTime: Date.now(),
     }));
   };
 
@@ -264,13 +281,304 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
       unknownValue: putValue,
       unknownLabel: 'P',
       questionData,
+      questionStartTime: Date.now(),
     }));
   };
+
+  const missingStockQuestion = () => {
+    var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+    var comboValue = round(Math.random() * 20) - 10;
+    var rcValue = round(Math.random() * 0.3);
+    var stockValue = round(comboValue + strikeValue - rcValue);
+
+    const labels = [
+      { label: 'K', value: strikeValue },
+      { label: 'S', value: '?' },
+      { label: 'Combo', value: comboValue.toFixed(2) },
+      { label: 'rc', value: rcValue.toFixed(2) }
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 2,
+      unknownValue: stockValue,
+      unknownLabel: 'S',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  };
+
+  const straddleToCall = () => {
+    let callValue = -1;
+    while (callValue < 0) {
+      var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+      var stockValue = round(Math.random() * 20) - 10 + strikeValue;
+      var rcValue = round(Math.random() * 0.3);
+      var putValue = round(Math.max(0, strikeValue - stockValue - rcValue) + Math.random() * 2);
+      callValue = round(stockValue - strikeValue + putValue + rcValue);
+    }
+
+    const straddleValue = callValue + putValue;
+    const labels = [
+      { label: 'Straddle', value: straddleValue.toFixed(2) },
+      { label: 'C', value: '?' },
+      { label: 'S', value: stockValue.toFixed(2) },
+      { label: 'K', value: strikeValue },
+      { label: 'rc', value: rcValue.toFixed(2) }
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 3,
+      unknownValue: callValue,
+      unknownLabel: 'C',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  };
+
+  const straddleToPut = () => {
+    let putValue = -1;
+    while (putValue < 0) {
+      var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+      var stockValue = round(Math.random() * 20) - 10 + strikeValue;
+      var rcValue = round(Math.random() * 0.3);
+      var callValue = round(Math.max(0, stockValue - strikeValue + rcValue) + Math.random() * 2);
+      putValue = round(strikeValue - stockValue + callValue - rcValue);
+    }
+
+    const straddleValue = callValue + putValue;
+    const labels = [
+      { label: 'Straddle', value: straddleValue.toFixed(2) },
+      { label: 'P', value: '?' },
+      { label: 'S', value: stockValue.toFixed(2) },
+      { label: 'K', value: strikeValue },
+      { label: 'rc', value: rcValue.toFixed(2) }
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 4,
+      unknownValue: putValue,
+      unknownLabel: 'P',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  };
+
+  const callToStraddle = () => {
+    var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+    var stockValue = round(Math.random() * 20) - 10 + strikeValue;
+    var rcValue = round(Math.random() * 0.3);
+    var callValue = round(Math.max(0, stockValue - strikeValue + rcValue) + Math.random() * 2);
+    var putValue = round(strikeValue - stockValue + callValue - rcValue);
+    var straddleValue = round(callValue + putValue);
+
+    const labels = [
+      { label: 'Straddle', value: '?' },
+      { label: 'C', value: callValue.toFixed(2) },
+      { label: 'S', value: stockValue.toFixed(2) },
+      { label: 'K', value: strikeValue },
+      { label: 'rc', value: rcValue.toFixed(2) }
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 5,
+      unknownValue: straddleValue,
+      unknownLabel: 'Straddle',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  };
+
+  const putToStraddle = () => {
+    var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+    var stockValue = round(Math.random() * 20) - 10 + strikeValue;
+    var rcValue = round(Math.random() * 0.3);
+    var callValue = round(Math.max(0, stockValue - strikeValue + rcValue) + Math.random() * 2);
+    var putValue = round(strikeValue - stockValue + callValue - rcValue);
+    var straddleValue = round(callValue + putValue);
+
+    const labels = [
+      { label: 'Straddle', value: '?' },
+      { label: 'P', value: putValue.toFixed(2) },
+      { label: 'S', value: stockValue.toFixed(2) },
+      { label: 'K', value: strikeValue },
+      { label: 'rc', value: rcValue.toFixed(2) }
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 6,
+      unknownValue: straddleValue,
+      unknownLabel: 'Straddle',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  };
+
+  const bwToCall = () => {
+    let callValue = -1;
+    while (callValue < 0) {
+      var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+      var stockValue = round(Math.random() * 20) - 10 + strikeValue;
+      var rcValue = round(Math.random() * 0.3);
+      callValue = round(Math.max(0, stockValue - strikeValue + rcValue) + Math.random() * 2);
+    }
+
+    var bwValue = callValue - (stockValue - strikeValue);
+
+    const labels = [
+      { label: 'B/W', value: bwValue.toFixed(2) },
+      { label: 'C', value: '?' },
+      { label: 'S', value: stockValue.toFixed(2) },
+      { label: 'K', value: strikeValue },
+      { label: 'rc', value: rcValue.toFixed(2) }
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 7,
+      unknownValue: callValue,
+      unknownLabel: 'C',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  };
+
+  const bwToPut = () => {
+    let putValue = -1;
+    while (putValue < 0) {
+      var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+      var stockValue = round(Math.random() * 20) - 10 + strikeValue;
+      var rcValue = round(Math.random() * 0.3);
+      putValue = round(Math.max(0, strikeValue - stockValue - rcValue) + Math.random() * 2);
+    }
+
+    var bwValue = putValue + rcValue;
+
+    const labels = [
+      { label: 'B/W', value: bwValue.toFixed(2) },
+      { label: 'P', value: '?' },
+      { label: 'S', value: stockValue.toFixed(2) },
+      { label: 'K', value: strikeValue },
+      { label: 'rc', value: rcValue.toFixed(2) }
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 8,
+      unknownValue: putValue,
+      unknownLabel: 'P',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  };
+
+  const psToCall = () => {
+    let callValue = -1;
+    while (callValue < 0) {
+      var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+      var stockValue = round(Math.random() * 20) - 10 + strikeValue;
+      var rcValue = round(Math.random() * 0.3);
+      callValue = round(Math.max(0, stockValue - strikeValue + rcValue) + Math.random() * 2);
+    }
+
+    var psValue = callValue - rcValue;
+
+    const labels = [
+      { label: 'P+S', value: psValue.toFixed(2) },
+      { label: 'C', value: '?' },
+      { label: 'S', value: stockValue.toFixed(2) },
+      { label: 'K', value: strikeValue },
+      { label: 'rc', value: rcValue.toFixed(2) }
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 9,
+      unknownValue: callValue,
+      unknownLabel: 'C',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  };
+
+  const psToPut = () => {
+    let putValue = -1;
+    while (putValue < 0) {
+      var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+      var stockValue = round(Math.random() * 20) - 10 + strikeValue;
+      var rcValue = round(Math.random() * 0.3);
+      putValue = round(Math.max(0, strikeValue - stockValue - rcValue) + Math.random() * 2);
+    }
+
+    var psValue = putValue - (strikeValue - stockValue);
+
+    const labels = [
+      { label: 'P+S', value: psValue.toFixed(2) },
+      { label: 'P', value: '?' },
+      { label: 'S', value: stockValue.toFixed(2) },
+      { label: 'K', value: strikeValue },
+      { label: 'rc', value: rcValue.toFixed(2) }
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 10,
+      unknownValue: putValue,
+      unknownLabel: 'P',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  };
+
+
 
   // ---------------------------------------------------------------------------------------------------------------------
 
   function newQuestion() {
-    const questionList = [missingCallQuestion, missingPutQuestion];
+    const questionList = [
+      missingCallQuestion,
+      missingPutQuestion,
+      missingStockQuestion,
+      straddleToCall,
+      straddleToPut,
+      callToStraddle,
+      putToStraddle,
+      bwToCall,
+      bwToPut,
+      psToCall,
+      psToPut,
+    ];
     const questionType = questions[Math.floor(Math.random() * questions.length)];
     questionList[questionType]();
   }
@@ -304,12 +612,23 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
 
   const validate = (event) => {
     if (parseFloat(event.target.value) == state.unknownValue) {
+
+      const timeTaken = (Date.now() - state.questionStartTime) / 1000;
+      const questionSummary = {
+        questionData: state.questionData,
+        correctAnswer: state.unknownValue,
+        questionType: state.questionType,
+        timeTaken: +timeTaken.toFixed(2),
+      };
+
       setState((prev) => ({
         ...prev,
         score: prev.score + 1,
+        history: [...prev.history, questionSummary],
       }));
       event.target.value = '';
       newQuestion();
+
     }
   }
 
@@ -318,20 +637,66 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
       ...prev,
       time: duration,
       score: 0,
+      history: [],
+      questionStartTime: null,
     }));
     setGameKey((prev) => prev+1);
   }
 
 
   if (state.time <= 0) {
+
+      if (state.history[state.history.length - 1].timeTaken != -1) {
+        const questionSummary = {
+          questionData: state.questionData,
+          correctAnswer: state.unknownValue,
+          questionType: state.questionType,
+          timeTaken: -1,
+        };
+
+        setState((prev) => ({
+          ...prev,
+          history: [...prev.history, questionSummary],
+        }));
+      }
+
     return (
       <div className="d-flex flex-column justify-content-center align-items-center vh-100">
 
-        <p style={{fontSize: 40}}>
-          Score: {state.score}
-        </p>
-        <button onClick={restart}>Restart</button>
-        <button onClick={changeSettings}>Change settings</button>
+        <h2 className="text-center">Game Over</h2>
+        <p className="text-center" style={{ fontSize: 24 }}>Final Score: {state.score}</p>
+        <div className="text-center my-3">
+          <button className="btn btn-primary mx-2" onClick={restart}>Restart</button>
+          <button className="btn btn-secondary mx-2" onClick={changeSettings}>Change Settings</button>
+        </div>
+
+        <hr />
+
+        <h4>Question Log</h4>
+        <table className="table table-bordered mt-3">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Inputs</th>
+              <th>Answer</th>
+              <th>Type</th>
+              <th>Time (s)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {state.history.map((entry, index) => (
+              <tr key={index} className={entry.timeTaken >= 0 ? 'table-success' : 'table-danger'}>
+                <td>{index + 1}</td>
+                <td>
+                  {entry.questionData.map(({ label, value }) => `${label}: ${value}`).join(' ; ')}
+                </td>
+                <td>{entry.correctAnswer}</td>
+                <td>{questionNames[entry.questionType]}</td>
+                <td>{entry.timeTaken}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
 
       </div>
     )

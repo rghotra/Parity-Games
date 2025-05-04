@@ -6,6 +6,7 @@ import './App.css'
 import Home from './Home'
 import PCPZetamac2 from './PCPZetamac2'
 import ArbitrageZetamac from './ArbitrageZetamac'
+import OptionsBoard from './OptionsBoard'
 
 function App() {
 
@@ -15,6 +16,7 @@ function App() {
         <Route path='/' element={<Home />} />
         <Route path='/pcp_zetamac_2' element={<PCPZetamac2 />} />
         <Route path='/arbitrage_zetamac' element={<ArbitrageZetamac />} />
+        <Route path='/options_board' element={<OptionsBoard />} />
       </Routes>
     </BrowserRouter>
   );

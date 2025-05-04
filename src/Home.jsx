@@ -26,7 +26,7 @@ export default function Home() {
 
           <li> <a target="_blank" rel="noopener noreferrer" href='https://kenstonk.herokuapp.com/'> Kenstonks </a> </li>
 
-          <li> <Link to='#'> Options Board Arbitrage Sim </Link> </li>
+          <li> <Link to='/options_board'> Options Board Zetamac </Link> </li>
 
           <li> <Link to='#'> Mock Trading </Link> </li>
 
