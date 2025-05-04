@@ -661,7 +661,7 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
       }
 
     return (
-      <div className="d-flex flex-column justify-content-center align-items-center vh-100">
+      <div className="d-flex flex-column justify-content-center align-items-center min-vh-100">
 
         <h2 className="text-center">Game Over</h2>
         <p className="text-center" style={{ fontSize: 24 }}>Final Score: {state.score}</p>
