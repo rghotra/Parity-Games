@@ -7,8 +7,10 @@ export default function PCPZetamac2() {
     straddle: true,
     combo: true,
     bwps: true,
+    delta: true,
     duration: 120,
     randPos: false,
+    randOrd: false,
     startGame: false,
     questions: []
   });
@@ -42,6 +44,10 @@ export default function PCPZetamac2() {
       questions.push(9)
       questions.push(10)
     }
+    if (state.delta) {
+      questions.push(11)
+      questions.push(12)
+    }
     if (questions.length > 0) {
       setState((prev) => ({
         ...prev,
@@ -65,6 +71,7 @@ export default function PCPZetamac2() {
               questions={state.questions}
               changeSettings={changeSettings}
               randomizePositions={state.randPos}
+              randomizeOrder={state.randOrd}
             />
   }
 
@@ -103,6 +110,12 @@ export default function PCPZetamac2() {
             </dt>
             <dd>Converting B/W or P+S to call or put value</dd>
 
+            <dt>
+              <label>Delta Adjust &nbsp;</label>
+              <input name='delta' type='checkbox' checked={state.delta} onChange={handleInputChange} />
+            </dt>
+            <dd>Repricing based on delta and underlying</dd>
+
           </dl>
 
           <p>
@@ -124,6 +137,12 @@ export default function PCPZetamac2() {
             </dt>
             <dd>Scatter values across screen randomly every question</dd>
 
+            <dt>
+              <label>Randomize Order &nbsp;</label>
+              <input name='randOrd' type='checkbox' checked={state.randOrd} onChange={handleInputChange} />
+            </dt>
+            <dd>Randomly order values for each question</dd>
+
           </dl>
 
           <input type='submit' value='Start'>
@@ -143,20 +162,22 @@ function round(num){
 }
 
 const questionNames = [
-    'Put to Call',
-    'Call to Put',
-    'Combo to Stock',
-    'Straddle To Call',
-    'Straddle To Put',
-    'Call To Straddle',
-    'Put To Straddle',
-    'B/W To Call',
-    'B/W To Put',
-    'P+S To Call',
-    'P+S To Put',
-  ];
+  'Put to Call',
+  'Call to Put',
+  'Combo to Stock',
+  'Straddle To Call',
+  'Straddle To Put',
+  'Call To Straddle',
+  'Put To Straddle',
+  'B/W To Call',
+  'B/W To Put',
+  'P+S To Call',
+  'P+S To Put',
+  'Call Delta Adjust',
+  'Put Delta Adjust',
+];
 
-function PCPZetamac2Question({ duration, questions, changeSettings, randomizePositions }) {
+function PCPZetamac2Question({ duration, questions, changeSettings, randomizePositions, randomizeOrder }) {
 
   const [state, setState] = useState({
     questionData: [],
@@ -174,13 +195,20 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
 
 
   const defaultPositions = (length) => {
-    const positions = []
+    let positions = []
 
     for (let i = 0; i < length; i++) {
       positions.push({
-        top: (i+0.5) * length/60 * 100,
+        top: (i+0.5) * 45/length,
         left: 50,
       })
+    }
+
+    if (randomizeOrder) {
+      positions = positions
+        .map(value => ({ value, sort: Math.random() }))
+        .sort((a, b) => a.sort - b.sort)
+        .map(({ value }) => value)
     }
 
     return positions;
@@ -561,6 +589,80 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
     }));
   };
 
+  const callDeltaAdjust = () => {
+    let newCall = -1
+    while (newCall < 0) {
+      var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+      var stockValue = round(Math.random() * 20) - 10 + strikeValue;
+      var rcValue = round(Math.random() * 0.3);
+      var callValue = round(Math.max(0, stockValue - strikeValue + rcValue) + Math.random() * 2);
+
+      var delta = Math.floor(Math.random() * 101);
+      var newStock = Math.max(0, stockValue + round(Math.random() * 1 - 0.5))
+
+      newCall = round(callValue + (newStock - stockValue)*(delta/100))
+    }
+
+    const labels = [
+      { label: 'C', value: callValue.toFixed(2) },
+      { label: 'K', value: strikeValue },
+      { label: 'ref', value: stockValue.toFixed(2) },
+      { label: 'rc', value: rcValue.toFixed(2) },
+      { label: 'Δ', value: delta },
+      { label: 'S', value: newStock.toFixed(2) },
+      { label: 'C\'', value: '?' },
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 11,
+      unknownValue: newCall,
+      unknownLabel: 'C\'',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  }
+
+  const putDeltaAdjust = () => {
+    let newPut = -1
+    while (newPut < 0) {
+      var strikeValue = Math.floor(Math.random() * 16) * 5 + 10;
+      var stockValue = round(Math.random() * 20) - 10 + strikeValue;
+      var rcValue = round(Math.random() * 0.3);
+      var putValue = round(Math.max(0, strikeValue - stockValue - rcValue) + Math.random() * 2);
+
+      var delta = Math.floor(Math.random() * -101);
+      var newStock = Math.max(0, stockValue + round(Math.random() * 1 - 0.5))
+
+      newPut = round(putValue + (newStock - stockValue)*(delta/100))
+    }
+
+    const labels = [
+      { label: 'P', value: putValue.toFixed(2) },
+      { label: 'K', value: strikeValue },
+      { label: 'ref', value: stockValue.toFixed(2) },
+      { label: 'rc', value: rcValue.toFixed(2) },
+      { label: 'Δ', value: delta },
+      { label: 'S', value: newStock.toFixed(2) },
+      { label: 'P\'', value: '?' },
+    ];
+
+    const positions = generatePositions(labels.length);
+    const questionData = labels.map((item, idx) => ({ ...item, position: positions[idx] }));
+
+    setState((prev) => ({
+      ...prev,
+      questionType: 12,
+      unknownValue: newPut,
+      unknownLabel: 'P\'',
+      questionData,
+      questionStartTime: Date.now(),
+    }));
+  }
+
 
 
   // ---------------------------------------------------------------------------------------------------------------------
@@ -578,6 +680,8 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
       bwToPut,
       psToCall,
       psToPut,
+      callDeltaAdjust,
+      putDeltaAdjust,
     ];
     const questionType = questions[Math.floor(Math.random() * questions.length)];
     questionList[questionType]();
@@ -611,7 +715,16 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
 
 
   const validate = (event) => {
-    if (parseFloat(event.target.value) == state.unknownValue) {
+
+    var guess = parseFloat(event.target.value)
+    var correct = false
+    if (state.questionType >= 11) {
+      correct = Math.abs(state.unknownValue - guess) <= 0.01
+    } else {
+      correct = guess == state.unknownValue
+    }
+
+    if (correct) {
 
       const timeTaken = (Date.now() - state.questionStartTime) / 1000;
       const questionSummary = {
@@ -646,12 +759,13 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
 
   if (state.time <= 0) {
 
-      if (state.history[state.history.length - 1].timeTaken != -1) {
+      if (state.history[state.history.length - 1].timeTaken > 0) {
+        const timeTaken = (Date.now() - state.questionStartTime) / 1000;
         const questionSummary = {
           questionData: state.questionData,
           correctAnswer: state.unknownValue,
           questionType: state.questionType,
-          timeTaken: -1,
+          timeTaken: -timeTaken.toFixed(2),
         };
 
         setState((prev) => ({
@@ -685,7 +799,7 @@ function PCPZetamac2Question({ duration, questions, changeSettings, randomizePos
           </thead>
           <tbody>
             {state.history.map((entry, index) => (
-              <tr key={index} className={entry.timeTaken >= 0 ? 'table-success' : 'table-danger'}>
+              <tr key={index} className={entry.timeTaken > 0 ? 'table-success' : 'table-danger'}>
                 <td>{index + 1}</td>
                 <td>
                   {entry.questionData.map(({ label, value }) => `${label}: ${value}`).join(' ; ')}
